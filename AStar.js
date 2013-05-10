@@ -63,6 +63,7 @@ var astar = (function() {
 
 	// Mouse position variables
 	var mouseX, mouseY;
+	var isDraging = false;
 
 	function eventMouseMove(e) {
 		if(state != mainStates.game) {
@@ -77,9 +78,12 @@ var astar = (function() {
 			mouseY = e.layerY - theCanvas.offsetTop;
 		}
 
-		var x = Math.floor(mouseX/32);
-		var y = Math.floor(mouseY/32);
-		selector = y*boardWidth + x;
+		if(isDraging) {
+		} else {
+			var x = Math.floor(mouseX/32);
+			var y = Math.floor(mouseY/32);
+			selector = y*boardWidth + x;
+		}
 	}
 
 	function eventMouseDown(e) {
@@ -162,8 +166,8 @@ var astar = (function() {
 	var selector = 0;
 
 	function reset() {
-		board = [16,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		board = [16,  0,  4,  1,  0,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 				  0,  0,  0,  0,  8,  0,  0,  0,  0,  0,
@@ -172,6 +176,7 @@ var astar = (function() {
 				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 				  0,  0,  0,  0,  0,  0,  0,  0,  0, 32];
+		AStar();
 
 		state = mainStates.game;
 	}
@@ -201,22 +206,161 @@ var astar = (function() {
 		}
 
 		// Draw walls
-		if((type & 1) != 0) {
+		if(type & 1) {
 			backContext.drawImage(imgTiles, 160, 0, 32, 32, x, y, 32, 32);
 		}
-		if((type & 2) != 0) {
+		if(type & 2) {
 			backContext.drawImage(imgTiles, 192, 0, 32, 32, x, y, 32, 32);
 		}
-		if((type & 4) != 0) {
+		if(type & 4) {
 			backContext.drawImage(imgTiles, 224, 0, 32, 32, x, y, 32, 32);
 		}
-		if((type & 8) != 0) {
+		if(type & 8) {
 			backContext.drawImage(imgTiles, 256, 0, 32, 32, x, y, 32, 32);
 		}
 
 		// Draw selector
 		if(selected) {
 			backContext.drawImage(imgTiles, 128, 0, 32, 32, x, y, 32, 32);
+		}
+	}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// A* algorithm
+//
+///////////////////////////////////////////////////////////////////////////////
+
+	// Start/End positions
+	var start = 0;
+	var end = boardHeight*boardWidth - 1;
+
+	// Stacks
+	var closedset = new Array();
+	var openset = new Array();
+
+	// Scoring
+	var g_score = new Array(boardHeight*boardWidth);
+	var h_score = new Array(boardHeight*boardWidth);
+	var f_score = new Array(boardHeight*boardWidth);
+
+	// Results
+	var came_from = new Array(boardHeight*boardWidth);
+
+	function AStar() {
+		// 1. Clear arrays
+		clearResultPath();
+		closedset.length = 0;
+		openset.length = 0;
+		var i;
+		for(i = 0; i < boardHeight*boardWidth; i++) {
+			g_score[i] = 0;
+			h_score[i] = 0;
+			f_score[i] = 0;
+			came_from[i] = -1;
+		}
+
+		// 2. Initialize calculation
+		openset.push(start);
+		g_score[start] = 0;
+		h_score[start] = estimate(start, end);
+		f_score[start] = h_score[start];
+
+		// 3. Iterations
+		var curNode;
+		var neighbors;
+		var tentative_g_score;
+		var tentative_is_better;
+		while(openset.length > 0) {
+			curNode = findMinimalScore();
+			openset.splice(openset.indexOf(curNode), 1);
+			closedset.push(curNode);
+			if(curNode == end) {
+				setResultPath();
+				return;
+			}
+
+			neighbors = findNeighbor(curNode);
+			for(i = 0; i < neighbors.length; i++) {
+				if(closedset.indexOf(neighbors[i]) >= 0) {
+					continue;
+				}
+				tentative_g_score = g_score[curNode]+1;
+
+				if(openset.indexOf(neighbors[i]) < 0) {
+					openset.push(neighbors[i]);
+					tentative_is_better = true;
+				} else if(tentative_g_score < g_score[neighbors[i]]) {
+					tentative_is_better = true;
+				} else {
+					tentative_is_better = false;
+				}
+
+				if(tentative_is_better == true) {
+					came_from[neighbors[i]] = curNode;
+					g_score[neighbors[i]] = tentative_g_score;
+					h_score[neighbors[i]] = estimate(neighbors[i], end);
+					f_score[neighbors[i]] = g_score[neighbors[i]] + h_score[neighbors[i]];
+				}
+			}
+		}
+
+		return;
+	}
+
+	function estimate(start, end) {
+		var startX, startY, endX, endY;
+		startX = start%boardWidth;
+		startY = Math.floor(start/boardWidth);
+		endX = end%boardWidth;
+		endY = Math.floor(end/boardWidth);
+
+		return (Math.abs(endX-startX) + Math.abs(endY-startY));
+	}
+
+	function findMinimalScore() {
+		var i, min = 0;
+		for(i = 0; i < openset.length; i++) {
+			if(g_score[openset[i]] < g_score[openset[min]]) {
+				min = i;
+			}
+		}
+
+		return openset[min];
+	}
+
+	function findNeighbor(target) {
+		var output = new Array();
+
+		if((target%boardWidth > 0) && !(board[target] & 1)) {
+			output.push(target-1);
+		}
+		if((target >= boardWidth) && !(board[target] & 2)) {
+			output.push(target - boardWidth);
+		}
+		if((target%boardWidth < boardWidth-1) && !(board[target] & 4)) {
+			output.push(target+1);
+		}
+		if((target < boardWidth*(boardHeight-1)) && !(board[target] & 8)) {
+			output.push(target + boardWidth);
+		}
+
+		return output;
+	}
+
+	function clearResultPath() {
+		for(var i = 0; i < boardHeight*boardWidth; i++) {
+			if(board[i] > 63) {
+				board[i] -= 64;
+			}
+		}
+	}
+
+	function setResultPath() {
+		var curNode = came_from[end];
+		while(curNode != start) {
+			board[curNode] += 64;
+			curNode = came_from[curNode];
 		}
 	}
 
