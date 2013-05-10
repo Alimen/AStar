@@ -21,6 +21,7 @@ var astar = (function() {
 
 	// Image resources
 	var imgTiles = new Image();
+	var imgTileBorder = new Image();
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -44,7 +45,7 @@ var astar = (function() {
 			init();
 			break;
 		case mainStates.loading:
-			drawLoad();
+			drawload();
 			break;
 		case mainStates.reset:
 			reset();
@@ -79,13 +80,13 @@ var astar = (function() {
 			mouseY = e.layerY - theCanvas.offsetTop;
 		}
 
-		var x = Math.floor(mouseX/32);
-		if(x >= boardWidth) {
-			x = boardWidth-1;
+		var x = Math.floor(mouseX/32)*2+1;
+		if(x > boardWidth-2) {
+			x = boardWidth-2;
 		}
-		var y = Math.floor(mouseY/32);
-		if(y >= boardHeight) {
-			y = boardHeight-1;
+		var y = Math.floor(mouseY/32)*2+1;
+		if(y > boardHeight-2) {
+			y = boardHeight-2;
 		}
 		selector = y*boardWidth + x;
 	}
@@ -96,10 +97,10 @@ var astar = (function() {
 		}
 
 		if(selector == start) {
-			board[start] -= 16;
+			board[start]  = 0;
 			isDragingStart = true;
 		} else if(selector == end) {
-			board[end] -= 32;
+			board[end] = 0;
 			isDragingEnd = true;
 		}
 	}
@@ -112,11 +113,11 @@ var astar = (function() {
 		if(isDragingStart) {
 			isDragingStart = false;
 			start = selector;
-			board[start] += 16;
+			board[start] = 1;
 		} else if(isDragingEnd) {
 			isDragingEnd = false;
 			end = selector;
-			board[end] += 32;
+			board[end] = 2;
 		} else {
 			changeWalls(selector);
 		}
@@ -130,13 +131,15 @@ var astar = (function() {
 ///////////////////////////////////////////////////////////////////////////////
 
 	// Pre-loader counters
-	var itemsToLoad = 1;
+	var itemsToLoad = 2;
 	var loadCount = 0;
 
 	function init() {
 		// Setup image loader events
 		imgTiles.src = "image/Tiles.png";
 		imgTiles.onload = eventItemLoaded;
+		imgTileBorder.src = "image/TileBorder.png";
+		imgTileBorder.onload = eventItemLoaded;
 
 		// Setup canvas
 		theCanvas = document.getElementById("canvas");
@@ -185,112 +188,157 @@ var astar = (function() {
 ///////////////////////////////////////////////////////////////////////////////
 
 	// Board
-	var boardWidth = screenWidth / 32;
-	var boardHeight = screenHeight / 32;
+	var boardWidth = screenWidth / 32 * 2 + 1;
+	var boardHeight = screenHeight / 32 * 2 + 1; 
 	var board = new Array(boardWidth * boardHeight);
 	var selector = 0;
 
 	function reset() {
-		board = [16,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  0,  0,  0,  0,  0, 32];
+		board = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				  1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+				  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1,
+				  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 		AStar();
 
 		state = mainStates.game;
 	}
 
 	function drawBoard() {
+		// Draw floors
 		var i, j, curTile;
-		for(i = 0; i < boardHeight; i++) {
-			for(j = 0; j < boardWidth; j++) {
+		for(i = 1; i < boardHeight; i += 2) {
+			for(j = 1; j < boardWidth; j += 2) {
 				curTile = boardWidth * i + j;
-				drawTile(j*32, i*32, board[curTile], ((selector == curTile)? true: false));
+				backContext.drawImage(imgTiles, board[curTile]*32, 0, 32, 32, (j-1)/2*32, (i-1)/2*32, 32, 32);
 			}
-		}
-
-		if(isDragingStart) {
-			drawTile(mouseX-16, mouseY-16, 16, false);
-		} else if(isDragingEnd) {
-			drawTile(mouseX-16, mouseY-16, 32, false);
-		}
-
-		context.drawImage(backCanvas, 0, 0);
-	}
-
-	function drawTile(x, y, type, selected) {
-		// Draw tile background
-		if(type > 63) {
-			backContext.drawImage(imgTiles, 96, 0, 32, 32, x, y, 32, 32);
-		} else if(type > 31) {
-			backContext.drawImage(imgTiles, 64, 0, 32, 32, x, y, 32, 32);
-		} else if(type > 15) {
-			backContext.drawImage(imgTiles, 32, 0, 32, 32, x, y, 32, 32);
-		} else {
-			backContext.drawImage(imgTiles, 0, 0, 32, 32, x, y, 32, 32);
 		}
 
 		// Draw walls
-		if(type & 1) {
-			backContext.drawImage(imgTiles, 160, 0, 32, 32, x, y, 32, 32);
-		}
-		if(type & 2) {
-			backContext.drawImage(imgTiles, 192, 0, 32, 32, x, y, 32, 32);
-		}
-		if(type & 4) {
-			backContext.drawImage(imgTiles, 224, 0, 32, 32, x, y, 32, 32);
-		}
-		if(type & 8) {
-			backContext.drawImage(imgTiles, 256, 0, 32, 32, x, y, 32, 32);
+		for(i = 0; i < boardHeight; i++) {
+			for(j = 0; j < boardWidth; j++) {
+				curTile = boardWidth * i + j;
+				if(board[curTile] == 1) {
+					if(i%2==0 && j%2==0) {
+						backContext.drawImage(imgTileBorder, 0, 0, 4, 4, j/2*32-2, i/2*32-2, 4, 4);
+					} else if(i%2 == 0) {
+						backContext.drawImage(imgTileBorder, 0, 0, 28, 4, (j-1)/2*32+2, i/2*32-2, 28, 4);
+					} else if(j%2 == 0) {
+						backContext.drawImage(imgTileBorder, 0, 0, 4, 28, j/2*32-2, (i-1)/2*32+2, 4, 28);
+					}
+				}
+			}
 		}
 
 		// Draw selector
-		if(selected && !(isDragingStart || isDragingEnd)) {
-			backContext.drawImage(imgTiles, 128, 0, 32, 32, x, y, 32, 32);
+		var x, y;
+		if(!isDragingStart && !isDragingEnd) {
+			x = ((selector%boardWidth)-1)/2;
+			y = (Math.floor(selector/boardWidth)-1)/2;
+			backContext.drawImage(imgTiles, 128, 0, 32, 32, x*32, y*32, 32, 32);
+		} else {
+			if(isDragingStart) {
+				backContext.drawImage(imgTiles, 32, 0, 32, 32, mouseX-16, mouseY-16, 32, 32);
+			}
+			if(isDragingEnd) {
+				backContext.drawImage(imgTiles, 64, 0, 32, 32, mouseX-16, mouseY-16, 32, 32);
+			}
 		}
+
+		// Flip
+		context.drawImage(backCanvas, 0, 0);
 	}
 
 	function changeWalls(target) {
-		board[target] = (board[target]+1)%16;
+		// Caclulate current wall coding
+		var curWall = 0;
+		if(board[target-1] != 0) {
+			curWall += 1;
+		}
+		if(board[target-boardWidth] != 0) {
+			curWall += 2;
+		}
+		if(board[target+1] != 0) {
+			curWall += 4;
+		}
+		if(board[target+boardWidth] != 0) {
+			curWall += 8;
+		}
+		
+		// Keep edges of the board
+		curWall = (curWall+1)%16;
+		if(target%boardWidth == 1) {
+			curWall = curWall | 1;
+		}
+		if(Math.floor(target/boardWidth) == 1) {
+			curWall = curWall | 2;
+		}
+		if(target%boardWidth == boardWidth-2) {
+			curWall = curWall | 4;
+		}
+		if(Math.floor(target/boardWidth) == boardHeight-2) {
+			curWall = curWall | 8;
+		}
 
+		// Set new walls
 		var n;
-		if(target%boardWidth > 0) {
-			n = target - 1;
-			if(board[target] & 1) {
-				board[n] = board[n] | 4;
-			} else {
-				board[n] = board[n] & (11+16+32);
-			}
+		n = target - 1;
+		if(curWall & 1) {
+			board[n] = 1;
+		} else {
+			board[n] = 0;
 		}
-		if(target >= boardWidth) {
-			n = target - boardWidth;
-			if(board[target] & 2) {
-				board[n] = board[n] | 8;
-			} else {
-				board[n] = board[n] & (7+16+32);
-			}
+		n = target - boardWidth;
+		if(curWall & 2) {
+			board[n] = 1;
+		} else {
+			board[n] = 0;
 		}
-		if(target%boardWidth < boardWidth-1) {
-			n = target + 1;
-			if(board[target] & 4) {
-				board[n] = board[n] | 1;
-			} else {
-				board[n] = board[n] & (14+16+32);
-			}
+		n = target + 1;
+		if(curWall & 4) {
+			board[n] = 1;
+		} else {
+			board[n] = 0;
 		}
-		if(target < boardWidth*(boardHeight-1)) {
-			n = target + boardWidth;
-			if(board[target] & 8) {
-				board[n] = board[n] | 2;
-			} else {
-				board[n] = board[n] & (13+16+32);
-			}
+		n = target + boardWidth;
+		if(curWall & 8) {
+			board[n] = 1;
+		} else {
+			board[n] = 0;
+		}
+
+		// Set new pillars
+		board[target-boardWidth-1] = checkPillars(target-boardWidth-1)? 1: 0;
+		board[target-boardWidth+1] = checkPillars(target-boardWidth+1)? 1: 0;
+		board[target+boardWidth-1] = checkPillars(target+boardWidth-1)? 1: 0;
+		board[target+boardWidth+1] = checkPillars(target+boardWidth+1)? 1: 0;
+	}
+
+	function checkPillars(target) {
+		if(target < boardWidth || target > (boardHeight-1)*boardWidth-1 || target%boardWidth == 0 || target%boardWidth == boardWidth-1) {
+			return true;
+		}
+
+		if(board[target-1] != 0 || board[target+1] != 0 || board[target-boardWidth] != 0 || board[target+boardWidth] != 0) { 
+			return true;
+		} else {
+			return false;
 		}
 	}
 
@@ -301,8 +349,8 @@ var astar = (function() {
 ///////////////////////////////////////////////////////////////////////////////
 
 	// Start/End positions
-	var start = 0;
-	var end = boardHeight*boardWidth - 1;
+	var start = boardWidth + 1;
+	var end = (boardHeight-1)*boardWidth - 2;
 
 	// Stacks
 	var closedset = new Array();
@@ -354,7 +402,7 @@ var astar = (function() {
 				if(closedset.indexOf(neighbors[i]) >= 0) {
 					continue;
 				}
-				tentative_g_score = g_score[curNode]+1;
+				tentative_g_score = g_score[curNode]+2;
 
 				if(openset.indexOf(neighbors[i]) < 0) {
 					openset.push(neighbors[i]);
@@ -402,17 +450,17 @@ var astar = (function() {
 	function findNeighbor(target) {
 		var output = new Array();
 
-		if((target%boardWidth > 0) && !(board[target] & 1)) {
-			output.push(target-1);
+		if(board[target-1] != 1) {
+			output.push(target-2);
 		}
-		if((target >= boardWidth) && !(board[target] & 2)) {
-			output.push(target - boardWidth);
+		if(board[target-boardWidth] != 1) {
+			output.push(target-boardWidth*2);
 		}
-		if((target%boardWidth < boardWidth-1) && !(board[target] & 4)) {
-			output.push(target+1);
+		if(board[target+1] != 1) {
+			output.push(target+2);
 		}
-		if((target < boardWidth*(boardHeight-1)) && !(board[target] & 8)) {
-			output.push(target + boardWidth);
+		if(board[target+boardWidth] != 1) {
+			output.push(target+boardWidth*2);
 		}
 
 		return output;
@@ -420,8 +468,8 @@ var astar = (function() {
 
 	function clearResultPath() {
 		for(var i = 0; i < boardHeight*boardWidth; i++) {
-			if(board[i] > 63) {
-				board[i] -= 64;
+			if(board[i] == 3) {
+				board[i] = 0;
 			}
 		}
 	}
@@ -429,7 +477,7 @@ var astar = (function() {
 	function setResultPath() {
 		var curNode = came_from[end];
 		while(curNode != start) {
-			board[curNode] += 64;
+			board[curNode] = 3;
 			curNode = came_from[curNode];
 		}
 	}
