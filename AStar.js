@@ -79,13 +79,15 @@ var astar = (function() {
 			mouseY = e.layerY - theCanvas.offsetTop;
 		}
 
-		if(isDragingStart || isDragingEnd) {
-			selector = -1;
-		} else {
-			var x = Math.floor(mouseX/32);
-			var y = Math.floor(mouseY/32);
-			selector = y*boardWidth + x;
+		var x = Math.floor(mouseX/32);
+		if(x >= boardWidth) {
+			x = boardWidth-1;
 		}
+		var y = Math.floor(mouseY/32);
+		if(y >= boardHeight) {
+			y = boardHeight-1;
+		}
+		selector = y*boardWidth + x;
 	}
 
 	function eventMouseDown(e) {
@@ -93,12 +95,10 @@ var astar = (function() {
 			return;
 		}
 
-		var x = Math.floor(mouseX/32);
-		var y = Math.floor(mouseY/32);
-		if(y*boardWidth+x == start) {
+		if(selector == start) {
 			board[start] -= 16;
 			isDragingStart = true;
-		} else if(y*boardWidth+x == end) {
+		} else if(selector == end) {
 			board[end] -= 32;
 			isDragingEnd = true;
 		}
@@ -109,17 +109,16 @@ var astar = (function() {
 			return;
 		}
 
-		var x = Math.floor(mouseX/32);
-		var y = Math.floor(mouseY/32);
 		if(isDragingStart) {
 			isDragingStart = false;
-			start = y*boardWidth + x;
+			start = selector;
 			board[start] += 16;
-		}
-		if(isDragingEnd) {
+		} else if(isDragingEnd) {
 			isDragingEnd = false;
-			end = y*boardWidth + x;
+			end = selector;
 			board[end] += 32;
+		} else {
+			changeWalls(selector);
 		}
 		AStar();
 	}
@@ -252,8 +251,46 @@ var astar = (function() {
 		}
 
 		// Draw selector
-		if(selected) {
+		if(selected && !(isDragingStart || isDragingEnd)) {
 			backContext.drawImage(imgTiles, 128, 0, 32, 32, x, y, 32, 32);
+		}
+	}
+
+	function changeWalls(target) {
+		board[target] = (board[target]+1)%16;
+
+		var n;
+		if(target%boardWidth > 0) {
+			n = target - 1;
+			if(board[target] & 1) {
+				board[n] = board[n] | 4;
+			} else {
+				board[n] = board[n] & 11;
+			}
+		}
+		if(target >= boardWidth) {
+			n = target - boardWidth;
+			if(board[target] & 2) {
+				board[n] = board[n] | 8;
+			} else {
+				board[n] = board[n] & 7;
+			}
+		}
+		if(target%boardWidth < boardWidth-1) {
+			n = target + 1;
+			if(board[target] & 4) {
+				board[n] = board[n] | 1;
+			} else {
+				board[n] = board[n] & 14;
+			}
+		}
+		if(target < boardWidth*(boardHeight-1)) {
+			n = target + boardWidth;
+			if(board[target] & 8) {
+				board[n] = board[n] | 2;
+			} else {
+				board[n] = board[n] & 13;
+			}
 		}
 	}
 
