@@ -63,7 +63,8 @@ var astar = (function() {
 
 	// Mouse position variables
 	var mouseX, mouseY;
-	var isDraging = false;
+	var isDragingStart = false;
+	var isDragingEnd = false;
 
 	function eventMouseMove(e) {
 		if(state != mainStates.game) {
@@ -78,7 +79,8 @@ var astar = (function() {
 			mouseY = e.layerY - theCanvas.offsetTop;
 		}
 
-		if(isDraging) {
+		if(isDragingStart || isDragingEnd) {
+			selector = -1;
 		} else {
 			var x = Math.floor(mouseX/32);
 			var y = Math.floor(mouseY/32);
@@ -90,12 +92,36 @@ var astar = (function() {
 		if(state != mainStates.game) {
 			return;
 		}
+
+		var x = Math.floor(mouseX/32);
+		var y = Math.floor(mouseY/32);
+		if(y*boardWidth+x == start) {
+			board[start] -= 16;
+			isDragingStart = true;
+		} else if(y*boardWidth+x == end) {
+			board[end] -= 32;
+			isDragingEnd = true;
+		}
 	}
 
 	function eventMouseUp(e) {
 		if(state != mainStates.game) {
 			return;
 		}
+
+		var x = Math.floor(mouseX/32);
+		var y = Math.floor(mouseY/32);
+		if(isDragingStart) {
+			isDragingStart = false;
+			start = y*boardWidth + x;
+			board[start] += 16;
+		}
+		if(isDragingEnd) {
+			isDragingEnd = false;
+			end = y*boardWidth + x;
+			board[end] += 32;
+		}
+		AStar();
 	}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -169,13 +195,13 @@ var astar = (function() {
 		board = [16,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  8,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  2,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  8,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  2,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-				  0,  0,  0,  0,  0,  0,  0,  0,  0, 32];
+				  0,  0,  4,  1,  0,  0,  0,  0,  0, 32];
 		AStar();
 
 		state = mainStates.game;
@@ -188,6 +214,12 @@ var astar = (function() {
 				curTile = boardWidth * i + j;
 				drawTile(j*32, i*32, board[curTile], ((selector == curTile)? true: false));
 			}
+		}
+
+		if(isDragingStart) {
+			drawTile(mouseX-16, mouseY-16, 16, false);
+		} else if(isDragingEnd) {
+			drawTile(mouseX-16, mouseY-16, 32, false);
 		}
 
 		context.drawImage(backCanvas, 0, 0);
@@ -305,6 +337,7 @@ var astar = (function() {
 			}
 		}
 
+		clearResultPath();
 		return;
 	}
 
