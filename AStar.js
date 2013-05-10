@@ -195,8 +195,8 @@ var astar = (function() {
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  8,  0,  0,  0,  0,  0,
-				  0,  0,  4,  1,  2,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
+				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  4,  1,  0,  0,  0,  0,  0,  0,
 				  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -265,7 +265,7 @@ var astar = (function() {
 			if(board[target] & 1) {
 				board[n] = board[n] | 4;
 			} else {
-				board[n] = board[n] & 11;
+				board[n] = board[n] & (11+16+32);
 			}
 		}
 		if(target >= boardWidth) {
@@ -273,7 +273,7 @@ var astar = (function() {
 			if(board[target] & 2) {
 				board[n] = board[n] | 8;
 			} else {
-				board[n] = board[n] & 7;
+				board[n] = board[n] & (7+16+32);
 			}
 		}
 		if(target%boardWidth < boardWidth-1) {
@@ -281,7 +281,7 @@ var astar = (function() {
 			if(board[target] & 4) {
 				board[n] = board[n] | 1;
 			} else {
-				board[n] = board[n] & 14;
+				board[n] = board[n] & (14+16+32);
 			}
 		}
 		if(target < boardWidth*(boardHeight-1)) {
@@ -289,7 +289,7 @@ var astar = (function() {
 			if(board[target] & 8) {
 				board[n] = board[n] | 2;
 			} else {
-				board[n] = board[n] & 13;
+				board[n] = board[n] & (13+16+32);
 			}
 		}
 	}
